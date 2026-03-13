@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Picker } from '@react-native-picker/picker';
-import { GEMINI_API_KEY, PROXY_URL as ENV_PROXY_URL } from '@env';
+import { GEMINI_API_KEY } from '@env';
 import { 
   Camera, Image as ImageIcon, History, Trash2, 
   ChevronLeft, Info, CheckCircle, AlertCircle, XCircle,
@@ -20,9 +20,6 @@ import NutritionalStats from './components/NutritionalStats';
 import HomeView from './components/HomeView';
 import HistoryView from './components/HistoryView';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Priority: ENV_PROXY_URL > Fallback to emulator address
-const PROXY_URL = ENV_PROXY_URL || "http://10.0.2.2:3000/api/analyze"; 
 
 const CONDITIONS = [
   { label: 'Diabetes', value: 'diabetes' },
@@ -121,20 +118,12 @@ export default function App() {
 
     const promptText = scanMode === 'single' ? singlePrompt : menuPrompt;
 
-    try {
-      const response = await fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: promptText,
-          imageBase64: image.base64,
-          modelName: AI_MODELS[0]
-        }),
-      });
-
-      const data = await response.json();
-      if (data.text) {
-        const parsedData = extractJsonFromText(data.text);
+    for (const modelName of AI_MODELS) {
+      try {
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const res = await model.generateContent([promptText, { inlineData: { data: image.base64, mimeType: "image/jpeg" } }]);
+        const parsedData = extractJsonFromText(res.response.text());
         if (parsedData) {
           const finalResult = { ...parsedData, id: Date.now().toString(), timestamp: new Date().toLocaleString(), imageUri: image.uri, medicalCondition: conditionLabel, scanType: scanMode };
           setResult(finalResult);
@@ -142,12 +131,10 @@ export default function App() {
           setLoading(false);
           return;
         }
-      }
-    } catch (error) {
-      console.log("Proxy Fetch Error:", error.message);
+      } catch (error) { console.log(modelName, error.message); }
     }
     
-    Alert.alert("Analysis Failed", "Please ensure the backend proxy is running.");
+    Alert.alert("Analysis Failed", "Please check your internet connection and API key.");
     setLoading(false);
   };
 

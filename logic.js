@@ -61,6 +61,7 @@ const validateResult = (data) => {
 module.exports = { 
   extractJsonFromText, 
   parseParagraphs, 
+  parseBulletPoints: parseParagraphs,
   formatHealthValue, 
   formatCalorieValue,
   validateResult
