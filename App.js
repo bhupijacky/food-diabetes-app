@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Picker } from '@react-native-picker/picker';
-import { GEMINI_API_KEY } from '@env';
+import { GEMINI_API_KEY, PROXY_URL as ENV_PROXY_URL } from '@env';
 import { 
   Camera, Image as ImageIcon, History, Trash2, 
   ChevronLeft, Info, CheckCircle, AlertCircle, XCircle,
@@ -21,7 +21,8 @@ import HomeView from './components/HomeView';
 import HistoryView from './components/HistoryView';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const PROXY_URL = "http://10.0.2.2:3000/api/analyze"; // Use 10.0.2.2 for Android Emulator, localhost for others
+// Priority: ENV_PROXY_URL > Fallback to emulator address
+const PROXY_URL = ENV_PROXY_URL || "http://10.0.2.2:3000/api/analyze"; 
 
 const CONDITIONS = [
   { label: 'Diabetes', value: 'diabetes' },
